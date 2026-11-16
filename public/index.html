@@ -207,7 +207,8 @@ function card(i) {
   if (isAdminRoute) {
     const cls = i.taken ? "mine" : "";
     const status = i.taken
-      ? `<div class="badge badge-mine">👤 Escolhido por ${esc(i.takenBy || "—")}</div>`
+      ? `<div class="badge badge-mine">👤 Escolhido por ${esc(i.takenBy || "—")}</div>
+         <button class="btn-release" data-act="release" data-id="${i.id}">Remover escolha</button>`
       : `<div class="badge badge-other">Não pego</div>`;
     return `<div class="card ${cls}">
       <div class="pic">${i.image ? `<img src="${esc(i.image)}" alt="${esc(i.name)}" loading="lazy">` : i.emoji}</div>
