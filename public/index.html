@@ -290,6 +290,11 @@ $("#busca").addEventListener("input", render);
 $("#soLivres").addEventListener("change", render);
 load();
 setInterval(load, 15000);
+
+if (window.EventSource) {
+  const es = new EventSource("/api/events");
+  es.onmessage = () => load();
+}
 </script>
 </body>
 </html>

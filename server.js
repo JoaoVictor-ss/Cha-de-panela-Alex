@@ -18,11 +18,38 @@ try {
   claims = JSON.parse(fs.readFileSync(FILE, "utf8"));
 } catch {}
 
+const sseClients = new Set();
+
+function broadcast() {
+  for (const res of sseClients) {
+    try { res.write("data: update\n\n"); } catch {}
+  }
+}
+
 function save() {
   const tmp = FILE + ".tmp";
   fs.writeFileSync(tmp, JSON.stringify(claims, null, 2));
   fs.renameSync(tmp, FILE);
+  broadcast();
 }
+
+app.get("/api/events", (req, res) => {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+  res.write(": connected\n\n");
+  sseClients.add(res);
+  const ping = setInterval(() => {
+    try { res.write(": ping\n\n"); } catch {}
+  }, 25000);
+  req.on("close", () => {
+    clearInterval(ping);
+    sseClients.delete(res);
+  });
+});
 
 // Senha do painel /admin (pode ser alterada via variável de ambiente ADMIN_PASSWORD no Render)
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "alex123";
