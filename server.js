@@ -14,9 +14,16 @@ const FILE = path.join(DATA_DIR, "selecoes.json");
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 let claims = {}; // { itemId: { name, token, at } }
+let updatedAt = 0;
 try {
-  claims = JSON.parse(fs.readFileSync(FILE, "utf8"));
+  const raw = JSON.parse(fs.readFileSync(FILE, "utf8"));
+  claims = raw.claims || raw;
+  updatedAt = raw.updatedAt || 0;
 } catch {}
+
+// Backup automático em nuvem (para nunca perder as escolhas no plano Free do Render se hibernar/reiniciar)
+const CLOUD_OBJ_URL = "https://api.restful-api.dev/objects/ff808181a09d98f701a1e2ba565e35c4";
+const CLOUD_NTFY_URL = "https://ntfy.sh/cha_alex_8f92a1c4e7b3d605";
 
 const sseClients = new Set();
 
@@ -26,12 +33,71 @@ function broadcast() {
   }
 }
 
-function save() {
+function writeLocal() {
   const tmp = FILE + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(claims, null, 2));
+  fs.writeFileSync(tmp, JSON.stringify({ updatedAt, claims }, null, 2));
   fs.renameSync(tmp, FILE);
-  broadcast();
 }
+
+async function syncToCloud() {
+  const payload = { updatedAt, claims };
+  try {
+    await fetch(CLOUD_OBJ_URL, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "cha-alex-selecoes", data: payload }),
+    });
+  } catch {}
+  try {
+    await fetch(CLOUD_NTFY_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch {}
+}
+
+async function restoreFromCloudIfNeeded() {
+  let best = { updatedAt, claims };
+  try {
+    const r1 = await fetch(CLOUD_OBJ_URL);
+    if (r1.ok) {
+      const j = await r1.json();
+      const d = j && j.data;
+      if (d && d.claims && (d.updatedAt || 0) >= best.updatedAt && Object.keys(d.claims).length >= Object.keys(best.claims).length) {
+        best = { updatedAt: d.updatedAt || Date.now(), claims: d.claims };
+      }
+    }
+  } catch {}
+  try {
+    const r2 = await fetch(CLOUD_NTFY_URL + "/json?poll=1&since=all");
+    if (r2.ok) {
+      const lines = (await r2.text()).trim().split("\n").filter(Boolean);
+      if (lines.length) {
+        const last = JSON.parse(lines[lines.length - 1]);
+        const d = JSON.parse(last.message);
+        if (d && d.claims && (d.updatedAt || 0) > best.updatedAt) {
+          best = { updatedAt: d.updatedAt, claims: d.claims };
+        }
+      }
+    }
+  } catch {}
+  if (best.updatedAt > updatedAt || Object.keys(best.claims).length > Object.keys(claims).length) {
+    claims = best.claims;
+    updatedAt = best.updatedAt;
+    writeLocal();
+    broadcast();
+    console.log("Escolhas restauradas da nuvem:", Object.keys(claims).length, "itens.");
+  }
+}
+
+function save() {
+  updatedAt = Date.now();
+  writeLocal();
+  broadcast();
+  syncToCloud();
+}
+
+app.get("/api/ping", (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 app.get("/api/events", (req, res) => {
   res.writeHead(200, {
@@ -126,4 +192,13 @@ app.get("/admin", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Rodando na porta " + PORT));
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || "https://cha-de-panela-alex.onrender.com";
+
+app.listen(PORT, () => {
+  console.log("Rodando na porta " + PORT);
+  restoreFromCloudIfNeeded();
+  // Auto-ping a cada 10 minutos para evitar hibernação no Render
+  setInterval(() => {
+    fetch(SELF_URL + "/api/ping").catch(() => {});
+  }, 10 * 60 * 1000);
+});
