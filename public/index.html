@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chá de Casa Nova 🏡</title>
+<style>
+  :root { --musgo:#4b5d3a; --musgo-claro:#e8ecdf; --preto:#1d1d1d; --bg:#f7f8f3; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--preto); line-height:1.5; overflow-x:hidden; -webkit-tap-highlight-color:transparent; }
+  header { background:var(--musgo); color:#fff; padding:40px 20px; text-align:center; }
+  header h1 { margin:0 0 12px; font-size:2rem; }
+  .wrap { max-width:1300px; margin:0 auto; padding:0 16px; }
+  .intro { max-width:760px; margin:0 auto; text-align:left; }
+  .intro p { margin:8px 0; }
+  .nota { background:var(--musgo-claro); border-left:4px solid var(--musgo); padding:12px 16px; border-radius:8px; margin:20px 0; }
+  .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin:20px 0; position:sticky; top:0; background:rgba(247,248,243,.96); backdrop-filter:blur(6px); padding:12px 0; z-index:5; border-bottom:1px solid #e2e6d8; }
+  .toolbar > input { padding:11px 14px; border:1.5px solid #cbd2bf; border-radius:10px; font-size:16px; flex:1; min-width:180px; background:#fff; transition:border-color .2s, box-shadow .2s; }
+  .toolbar > input:focus { outline:none; border-color:var(--musgo); box-shadow:0 0 0 3px rgba(75,93,58,.15); }
+  .filter-toggle { display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:9px 16px; background:#fff; border:1.5px solid #cbd2bf; border-radius:999px; font-size:.95rem; font-weight:600; color:var(--preto); cursor:pointer; user-select:none; transition:all .2s ease; box-shadow:0 1px 2px rgba(0,0,0,.04); white-space:nowrap; }
+  .filter-toggle:hover { border-color:var(--musgo); background:#fbfcf9; }
+  .filter-toggle input { position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+  .switch-track { width:38px; height:22px; background:#cbd2bf; border-radius:999px; position:relative; transition:background .2s ease; flex-shrink:0; }
+  .switch-track::after { content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform .2s ease; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .filter-toggle:has(input:checked) { border-color:var(--musgo); background:var(--musgo-claro); color:var(--musgo); }
+  .filter-toggle input:checked + .switch-track { background:var(--musgo); }
+  .filter-toggle input:checked + .switch-track::after { transform:translateX(16px); }
+  .count-pill { background:var(--musgo-claro); color:var(--musgo); font-size:.8rem; padding:2px 8px; border-radius:999px; font-weight:700; }
+  .filter-toggle:has(input:checked) .count-pill { background:var(--musgo); color:#fff; }
+  h2 { color:var(--musgo); border-bottom:2px solid var(--musgo-claro); padding-bottom:6px; margin-top:34px; font-size:1.35rem; }
+  .grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; }
+  .pic { aspect-ratio:1/1; border-radius:8px; background:#fff; border:1px solid #e6e8e0; display:flex; align-items:center; justify-content:center; font-size:3.2rem; overflow:hidden; padding:4px; }
+  .pic img { width:100%; height:100%; object-fit:contain; }
+  .card { background:#fff; border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.1); display:flex; flex-direction:column; gap:8px; border:2px solid transparent; min-width:0; word-break:break-word; }
+  .card h3 { margin:0; font-size:1.02rem; line-height:1.3; }
+  .card p { margin:0; font-size:.88rem; color:#555; flex:1; }
+  .card a { font-size:.85rem; color:var(--musgo); font-weight:500; text-decoration:none; }
+  .card a:hover { text-decoration:underline; }
+  .card.taken { opacity:.75; background:#f0f0ee; border-color:#ddd; }
+  .card.mine { opacity:1; border-color:var(--musgo); background:var(--musgo-claro); }
+  .badge { font-size:.82rem; font-weight:600; padding:6px 8px; border-radius:6px; text-align:center; line-height:1.3; }
+  .badge-mine { background:#d4e2c3; color:#2b391f; }
+  .badge-other { background:#e2e2df; color:#444; }
+  .meus-box { background:#fff; border:2px solid var(--musgo); border-radius:10px; padding:12px 16px; margin:12px 0; display:none; font-size:.95rem; }
+  .meus-box strong { color:var(--musgo); }
+  .admin-panel { background:#fff; border:2px solid var(--musgo); border-radius:12px; padding:16px; margin:16px 0; display:none; }
+  .admin-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+  .admin-header h3 { margin:0; color:var(--musgo); font-size:1.15rem; }
+  .admin-stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .stat-chip { background:var(--musgo-claro); color:var(--musgo); padding:6px 12px; border-radius:8px; font-weight:700; font-size:.9rem; }
+  .admin-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  .admin-table th, .admin-table td { text-align:left; padding:8px 10px; border-bottom:1px solid #e6e8e0; }
+  .admin-table th { color:var(--musgo); font-weight:700; background:#f9faf6; }
+  .btn-sm { padding:5px 10px; font-size:.8rem; min-height:30px; background:#b93829; color:#fff; border-radius:6px; }
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .modal { background:#fff; border-radius:14px; padding:24px; width:100%; max-width:380px; box-shadow:0 10px 30px rgba(0,0,0,.25); text-align:center; }
+  .modal h3 { margin:0 0 8px; color:var(--musgo); }
+  .modal p { margin:0 0 16px; font-size:.9rem; color:#555; }
+  .modal input { width:100%; padding:11px 14px; border:1.5px solid #cbd2bf; border-radius:10px; font-size:16px; margin-bottom:12px; }
+  .modal button { width:100%; }
+  button { cursor:pointer; border:0; border-radius:8px; padding:10px; font-size:.92rem; font-weight:600; min-height:42px; touch-action:manipulation; }
+  .btn-pick { background:var(--musgo); color:#fff; }
+  .btn-pick:hover { background:#3b4a2d; }
+  .btn-release { background:var(--preto); color:#fff; }
+  .btn-off { background:#ccc; color:#666; cursor:not-allowed; }
+  footer { text-align:center; padding:30px 16px 50px; color:#555; }
+  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--preto); color:#fff; padding:12px 20px; border-radius:10px; display:none; z-index:10; width:max-content; max-width:calc(100vw - 32px); text-align:center; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+
+  @media (max-width:1100px) {
+    .grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  }
+  @media (max-width:860px) {
+    .grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  }
+  @media (max-width:640px) {
+    header { padding:26px 16px; }
+    header h1 { font-size:1.55rem; }
+    .intro { font-size:.93rem; }
+    .wrap { padding:0 12px; }
+    .nota { padding:10px 12px; font-size:.9rem; margin:14px 0; }
+    .toolbar { gap:8px; padding:10px 0; margin:12px 0; }
+    .toolbar > input#nome { flex:1 1 100%; min-width:100%; padding:10px 12px; }
+    .toolbar > input#busca { flex:1 1 120px; min-width:0; padding:10px 12px; }
+    .filter-toggle { padding:8px 12px; font-size:.85rem; gap:7px; }
+    .switch-track { width:34px; height:20px; }
+    .switch-track::after { width:14px; height:14px; }
+    .filter-toggle input:checked + .switch-track::after { transform:translateX(14px); }
+    h2 { font-size:1.15rem; margin-top:24px; }
+    .grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .card { padding:10px; gap:6px; border-radius:10px; }
+    .card h3 { font-size:.92rem; }
+    .card p { font-size:.8rem; }
+    .card a { font-size:.8rem; }
+    .badge { font-size:.76rem; padding:5px 6px; }
+    button { padding:8px; font-size:.85rem; min-height:38px; }
+  }
+  @media (max-width:350px) {
+    .grid { grid-template-columns:1fr; }
+    .filter-toggle { flex:1 1 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏡 Meu Chá de Casa Nova!</h1>
+  <div class="intro">
+    <p>Estou começando uma nova fase da minha vida: meu cantinho, meu novo lar! E quero comemorar esse momento especial ao lado de pessoas queridas.</p>
+    <p>Como estou montando minha casa para morar sozinho, preparei uma lista com sugestões de presentes que vão me ajudar a deixar tudo mais organizado, completo e aconchegante.</p>
+    <p>Os links são apenas ilustrativos, para mostrar o estilo dos produtos e dos kits que estou procurando. Não precisam comprar exatamente aqueles modelos ou nas mesmas lojas. Fiquem à vontade para escolher opções semelhantes e que se encaixem no orçamento de cada um.</p>
+    <p><strong>Preferência de cores:</strong> verde musgo, preto ou branco, nesta ordem.</p>
+    <p>O mais importante para mim é ter vocês participando desse momento tão especial. Vou ficar muito feliz em comemorar essa nova etapa ao lado de vocês! ❤️</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="nota">
+    🎁 A lista é composta por sugestões. Os kits podem ser substituídos por itens individuais semelhantes, e não é necessário presentear com todos os componentes de uma categoria. O objetivo é ajudar a montar minha casa sem que ninguém precise gastar muito. Digite seu nome, escolha um item e ele ficará reservado para você, evitando presentes repetidos.
+  </div>
+
+  <div class="toolbar">
+    <input id="nome" placeholder="Seu nome" maxlength="60">
+    <input id="busca" placeholder="Buscar item...">
+    <label class="filter-toggle">
+      <input type="checkbox" id="soLivres">
+      <span class="switch-track"></span>
+      <span>Só disponíveis</span>
+      <span class="count-pill" id="livresCount">0</span>
+    </label>
+  </div>
+
+  <div id="lista"></div>
+</main>
+
+<div id="adminModal" class="modal-bg">
+  <form id="adminForm" class="modal">
+    <h3>🔐 Área do Administrador</h3>
+    <p>Digite a senha para ver quem escolheu cada item.</p>
+    <input type="password" id="adminPwdInput" placeholder="Senha do admin" required autofocus>
+    <button type="submit" class="btn-pick">Entrar</button>
+  </form>
+</div>
+
+<footer>Desde já, agradeço muito. Estou muito feliz e realizado. 💚</footer>
+<div id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let items = [];
+const isAdminRoute = location.pathname.replace(/\/+$/, "") === "/admin";
+let adminPassword = sessionStorage.getItem("cha_admin_pwd") || "";
+
+if (isAdminRoute) {
+  $("#nome").style.display = "none";
+}
+
+function getCookie(k) {
+  const m = document.cookie.match(new RegExp("(?:^|; )" + k + "=([^;]*)"));
+  return m ? decodeURIComponent(m[1]) : "";
+}
+function setCookie(k, v) {
+  document.cookie = `${k}=${encodeURIComponent(v)}; max-age=31536000; path=/; SameSite=Lax`;
+}
+
+let token = localStorage.getItem("cha_token") || getCookie("cha_token") || "";
+if (token) { localStorage.setItem("cha_token", token); setCookie("cha_token", token); }
+
+const savedName = localStorage.getItem("cha_nome") || getCookie("cha_nome") || "";
+$("#nome").value = savedName;
+
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toast.t); toast.t = setTimeout(() => (t.style.display = "none"), 3000);
+}
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+async function load() {
+  if (isAdminRoute && !adminPassword) return;
+  const headers = adminPassword ? { "x-admin-password": adminPassword } : {};
+  const r = await fetch("/api/items?token=" + encodeURIComponent(token), { headers });
+  items = await r.json();
+  render();
+}
+
+function render() {
+  const q = $("#busca").value.toLowerCase().trim();
+  const livres = $("#soLivres").checked;
+  const availCount = items.filter((i) => !i.taken).length;
+  $("#livresCount").textContent = availCount;
+
+  const cats = {};
+  items.forEach((i) => {
+    if (q && !(i.name + " " + i.desc).toLowerCase().includes(q)) return;
+    if (livres && i.taken) return;
+    (cats[i.category] ||= []).push(i);
+  });
+  $("#lista").innerHTML = Object.entries(cats).map(([cat, list]) => `
+    <h2>${esc(cat)}</h2>
+    <div class="grid">${list.map(card).join("")}</div>`).join("") || "<p>Nenhum item encontrado.</p>";
+}
+
+function card(i) {
+  if (isAdminRoute) {
+    const cls = i.taken ? "mine" : "";
+    const status = i.taken
+      ? `<div class="badge badge-mine">👤 Escolhido por ${esc(i.takenBy || "—")}</div>`
+      : `<div class="badge badge-other">Não pego</div>`;
+    return `<div class="card ${cls}">
+      <div class="pic">${i.image ? `<img src="${esc(i.image)}" alt="${esc(i.name)}" loading="lazy">` : i.emoji}</div>
+      <h3>${esc(i.name)}</h3>
+      ${i.desc ? `<p>${esc(i.desc)}</p>` : "<p></p>"}
+      <a href="${i.link}" target="_blank" rel="noopener">Ver exemplos ↗</a>
+      ${status}</div>`;
+  }
+
+  const cls = i.mine ? "mine" : i.taken ? "taken" : "";
+  let action, status = "";
+  if (i.mine) {
+    status = `<div class="badge badge-mine">✅ Você escolheu levar (${esc(i.takenBy)})</div>`;
+    action = `<button class="btn-release" data-act="release" data-id="${i.id}">Desmarcar minha escolha</button>`;
+  } else if (i.taken) {
+    status = `<div class="badge badge-other">🔒 Já foi pego</div>`;
+    action = `<button class="btn-off" disabled>Indisponível</button>`;
+  } else {
+    action = `<button class="btn-pick" data-act="pick" data-id="${i.id}">Eu levo este!</button>`;
+  }
+  return `<div class="card ${cls}">
+    <div class="pic">${i.image ? `<img src="${esc(i.image)}" alt="${esc(i.name)}" loading="lazy">` : i.emoji}</div>
+    <h3>${esc(i.name)}</h3>
+    ${i.desc ? `<p>${esc(i.desc)}</p>` : "<p></p>"}
+    <a href="${i.link}" target="_blank" rel="noopener">Ver exemplos ↗</a>
+    ${status}${action}</div>`;
+}
+
+async function post(url, body) {
+  const headers = { "Content-Type": "application/json" };
+  if (adminPassword) headers["x-admin-password"] = adminPassword;
+  const r = await fetch(url, { method:"POST", headers, body:JSON.stringify(body) });
+  return { ok:r.ok, data: await r.json() };
+}
+
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const id = Number(b.dataset.id);
+  if (b.dataset.act === "pick") {
+    const name = $("#nome").value.trim();
+    if (!name) { toast("Digite seu nome primeiro 🙂"); $("#nome").focus(); window.scrollTo({top:0,behavior:"smooth"}); return; }
+    localStorage.setItem("cha_nome", name);
+    setCookie("cha_nome", name);
+    const { ok, data } = await post("/api/claim", { id, name, token });
+    if (ok) {
+      token = data.token;
+      localStorage.setItem("cha_token", token);
+      setCookie("cha_token", token);
+      toast("Item reservado para você! Obrigado 💚");
+    } else toast(data.error);
+  } else {
+    if (!confirm("Desmarcar este item?")) return;
+    const { ok, data } = await post("/api/release", { id, token });
+    toast(ok ? "Item liberado." : data.error);
+  }
+  load();
+});
+
+$("#adminForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pwd = $("#adminPwdInput").value;
+  const { ok, data } = await post("/api/admin/auth", { password: pwd });
+  if (ok) {
+    adminPassword = pwd;
+    sessionStorage.setItem("cha_admin_pwd", pwd);
+    $("#adminModal").style.display = "none";
+    toast("Acesso liberado 🔓");
+    load();
+  } else {
+    toast(data.error || "Senha incorreta.");
+  }
+});
+
+if (isAdminRoute && !adminPassword) {
+  $("#adminModal").style.display = "flex";
+}
+
+$("#busca").addEventListener("input", render);
+$("#soLivres").addEventListener("change", render);
+load();
+setInterval(load, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: cha-de-casa-nova
+    runtime: node
+    plan: starter # disco persistente exige plano pago
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: ADMIN_PASSWORD
+        value: alex123
+    disk:
+      name: dados
+      mountPath: /var/data
+      sizeGB: 1
